@@ -26,9 +26,6 @@ jobs:
       - name: Run Linter (Checkstyle) and Tests
         run: ./gradlew check
 
-      - name: Run JUnit Test
-        run: ./gradlew test
-
       - name: Analyze with SonarCloud
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
