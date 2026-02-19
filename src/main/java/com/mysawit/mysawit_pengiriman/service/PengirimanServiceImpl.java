@@ -33,7 +33,7 @@ public class PengirimanServiceImpl implements PengirimanService {
     public Pengiriman update(UUID id, Pengiriman pengirimanDetails) {
         Pengiriman pengirimanLama = findById(id);
 
-        pengirimanLama.setNamaSupir(pengirimanDetails.getNamaSupir());
+        pengirimanLama.setNama(pengirimanDetails.getNama());
         pengirimanLama.setTotalAngkutan(pengirimanDetails.getTotalAngkutan());
 
         return pengirimanRepository.save(pengirimanLama);

@@ -15,7 +15,7 @@ public class Pengiriman {
     private UUID id;
 
     @Column(nullable = false)
-    private String namaSupir;
+    private String nama;
 
     @Column(nullable = false)
     private Double totalAngkutan;
