@@ -1,6 +1,11 @@
 package com.mysawit.mysawit_pengiriman.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mysawit.mysawit_pengiriman.dto.AssignPengirimanRequest;
+import com.mysawit.mysawit_pengiriman.dto.UpdateStatusRequest;
+import com.mysawit.mysawit_pengiriman.dto.VerifikasiRequest;
 import com.mysawit.mysawit_pengiriman.model.Pengiriman;
+import com.mysawit.mysawit_pengiriman.model.StatusPengiriman;
 import com.mysawit.mysawit_pengiriman.service.PengirimanService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,12 +15,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -26,73 +29,73 @@ class PengirimanControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     private PengirimanService pengirimanService;
 
-    private Pengiriman pengiriman;
     private UUID dummyId;
+    private Pengiriman dummyPengiriman;
 
     @BeforeEach
     void setUp() {
         dummyId = UUID.randomUUID();
-        pengiriman = new Pengiriman();
-        pengiriman.setId(dummyId);
-        pengiriman.setNama("Bambang");
-        pengiriman.setTotalAngkutan(300.0);
+        dummyPengiriman = new Pengiriman();
+        dummyPengiriman.setId(dummyId);
+        dummyPengiriman.setStatus(StatusPengiriman.MEMUAT);
+        dummyPengiriman.setTotalAngkutan(400.0);
     }
 
     @Test
-    void testGetAllPengiriman() throws Exception {
-        when(pengirimanService.findAll()).thenReturn(Arrays.asList(pengiriman));
+    void testAssignPengiriman_Success() throws Exception {
+        AssignPengirimanRequest request = new AssignPengirimanRequest();
+        request.setSupirId(UUID.randomUUID());
+        request.setMandorId(UUID.randomUUID());
+        request.setTotalAngkutan(400.0);
 
-        mockMvc.perform(get("/api/pengiriman"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].nama").value("Bambang"))
-            .andExpect(jsonPath("$[0].totalAngkutan").value(300.0));
-    }
+        when(pengirimanService.assignPengiriman(any(Pengiriman.class))).thenReturn(dummyPengiriman);
 
-    @Test
-    void testGetPengirimanById() throws Exception {
-        when(pengirimanService.findById(dummyId)).thenReturn(pengiriman);
-
-        mockMvc.perform(get("/api/pengiriman/" + dummyId))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nama").value("Bambang"));
-    }
-
-    @Test
-    void testCreatePengiriman() throws Exception {
-        when(pengirimanService.create(any(Pengiriman.class))).thenReturn(pengiriman);
-
-        String jsonRequest = "{ \"nama\": \"Bambang\", \"totalAngkutan\": 300.0 }";
-
-        mockMvc.perform(post("/api/pengiriman")
+        mockMvc.perform(post("/api/pengiriman/assign")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nama").value("Bambang"));
+            .andExpect(jsonPath("$.status").value("MEMUAT"))
+            .andExpect(jsonPath("$.totalAngkutan").value(400.0));
     }
 
     @Test
-    void testUpdatePengiriman() throws Exception {
-        when(pengirimanService.update(eq(dummyId), any(Pengiriman.class))).thenReturn(pengiriman);
+    void testUpdateStatusSupir_Success() throws Exception {
+        UpdateStatusRequest request = new UpdateStatusRequest();
+        request.setStatus(StatusPengiriman.TIBA_DI_TUJUAN);
 
-        String jsonRequest = "{ \"nama\": \"Bambang Baru\", \"totalAngkutan\": 400.0 }";
+        dummyPengiriman.setStatus(StatusPengiriman.TIBA_DI_TUJUAN);
+        when(pengirimanService.updateStatusBySupir(eq(dummyId), any(StatusPengiriman.class)))
+            .thenReturn(dummyPengiriman);
 
-        mockMvc.perform(put("/api/pengiriman/" + dummyId)
+        mockMvc.perform(patch("/api/pengiriman/" + dummyId + "/status-supir")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
-            .andExpect(status().isOk());
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("TIBA_DI_TUJUAN"));
     }
 
     @Test
-    void testDeletePengiriman() throws Exception {
-        doNothing().when(pengirimanService).delete(dummyId);
+    void testVerifikasiMandor_Reject_Success() throws Exception {
+        VerifikasiRequest request = new VerifikasiRequest();
+        request.setApproved(false);
+        request.setAlasan("Buah rusak di jalan");
 
-        String expectedResponse = "Data Pengiriman dengan ID " + dummyId + " berhasil dihapus.";
+        dummyPengiriman.setStatus(StatusPengiriman.DITOLAK_MANDOR);
+        dummyPengiriman.setAlasanPenolakan("Buah rusak di jalan");
+        when(pengirimanService.verifikasiOlehMandor(dummyId, false, "Buah rusak di jalan"))
+            .thenReturn(dummyPengiriman);
 
-        mockMvc.perform(delete("/api/pengiriman/" + dummyId))
+        mockMvc.perform(post("/api/pengiriman/" + dummyId + "/verifikasi-mandor")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(content().string(expectedResponse));
+            .andExpect(jsonPath("$.status").value("DITOLAK_MANDOR"))
+            .andExpect(jsonPath("$.alasanPenolakan").value("Buah rusak di jalan"));
     }
 }

@@ -1,15 +1,17 @@
 package com.mysawit.mysawit_pengiriman.controller;
 
+import com.mysawit.mysawit_pengiriman.dto.AssignPengirimanRequest;
+import com.mysawit.mysawit_pengiriman.dto.UpdateStatusRequest;
+import com.mysawit.mysawit_pengiriman.dto.VerifikasiRequest;
 import com.mysawit.mysawit_pengiriman.model.Pengiriman;
 import com.mysawit.mysawit_pengiriman.service.PengirimanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/pengiriman")
 public class PengirimanController {
@@ -17,32 +19,60 @@ public class PengirimanController {
     @Autowired
     private PengirimanService pengirimanService;
 
-    @GetMapping
-    public List<Pengiriman> getAllPengiriman() {
-        return pengirimanService.findAll();
+    @PostMapping("/assign")
+    public ResponseEntity<?> assignPengiriman(@RequestBody AssignPengirimanRequest request) {
+        try {
+            Pengiriman pengiriman = new Pengiriman();
+            pengiriman.setSupirId(request.getSupirId());
+            pengiriman.setMandorId(request.getMandorId());
+            pengiriman.setTotalAngkutan(request.getTotalAngkutan());
+
+            Pengiriman result = pengirimanService.assignPengiriman(pengiriman);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Pengiriman> getPengirimanById(@PathVariable UUID id) {
-        Pengiriman pengiriman = pengirimanService.findById(id);
-        return ResponseEntity.ok(pengiriman);
+    @PatchMapping("/{id}/status-supir")
+    public ResponseEntity<?> updateStatusSupir(@PathVariable UUID id, @RequestBody UpdateStatusRequest request) {
+        try {
+            Pengiriman result = pengirimanService.updateStatusBySupir(id, request.getStatus());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @PostMapping
-    public ResponseEntity<Pengiriman> createPengiriman(@RequestBody Pengiriman pengiriman) {
-        Pengiriman savedPengiriman = pengirimanService.create(pengiriman);
-        return ResponseEntity.ok(savedPengiriman);
+    @PostMapping("/{id}/verifikasi-mandor")
+    public ResponseEntity<?> verifikasiMandor(@PathVariable UUID id, @RequestBody VerifikasiRequest request) {
+        try {
+            Pengiriman result = pengirimanService.verifikasiOlehMandor(id, request.isApproved(), request.getAlasan());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Pengiriman> updatePengiriman(@PathVariable UUID id, @RequestBody Pengiriman pengirimanDetails) {
-        Pengiriman updatedPengiriman = pengirimanService.update(id, pengirimanDetails);
-        return ResponseEntity.ok(updatedPengiriman);
+    @PostMapping("/{id}/verifikasi-admin")
+    public ResponseEntity<?> verifikasiAdmin(@PathVariable UUID id, @RequestBody VerifikasiRequest request) {
+        try {
+            Pengiriman result = pengirimanService.verifikasiOlehAdmin(id, request.isApproved(), request.getAlasan());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deletePengiriman(@PathVariable UUID id) {
-        pengirimanService.delete(id);
-        return ResponseEntity.ok("Data Pengiriman dengan ID " + id + " berhasil dihapus.");
+    @PostMapping("/{id}/tolak-parsial")
+    public ResponseEntity<?> tolakParsialAdmin(@PathVariable UUID id, @RequestBody VerifikasiRequest request) {
+        try {
+            Pengiriman result = pengirimanService.tolakParsialOlehAdmin(id, request.getAlasan(), request.getAngkutanDiakui());
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
