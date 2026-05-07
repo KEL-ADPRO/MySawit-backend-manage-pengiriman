@@ -24,6 +24,7 @@ import com.mysawit.pengiriman.usecase.ShipmentCommandUseCase;
 import com.mysawit.pengiriman.usecase.ShipmentQueryUseCase;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -83,7 +84,7 @@ public class ShipmentService implements ShipmentCommandUseCase, ShipmentQueryUse
         Shipment shipment = new Shipment();
         shipment.setMandorId(request.mandorId());
         shipment.setDriverId(request.driverId());
-        shipment.setHarvestIds(request.harvestIds());
+        shipment.setHarvestIds(new ArrayList<>(request.harvestIds()));
         shipment.setTotalWeightKg(totalWeight);
         shipment.setStatus(ShipmentStatus.MEMUAT);
 
@@ -162,12 +163,10 @@ public class ShipmentService implements ShipmentCommandUseCase, ShipmentQueryUse
     @Override
     @Transactional(readOnly = true)
     public List<ShipmentResponse> getShipments(ShipmentQueryRequest request) {
-        Specification<Shipment> specification = Specification.allOf(
-            ShipmentSpecifications.hasDriverId(request.driverId()),
-            ShipmentSpecifications.hasMandorId(request.mandorId()),
-            ShipmentSpecifications.hasStatus(request.status()),
-            ShipmentSpecifications.createdOn(request.date())
-        );
+        Specification<Shipment> specification = Specification.where(ShipmentSpecifications.hasDriverId(request.driverId()))
+            .and(ShipmentSpecifications.hasMandorId(request.mandorId()))
+            .and(ShipmentSpecifications.hasStatus(request.status()))
+            .and(ShipmentSpecifications.createdOn(request.date()));
 
         return shipmentRepository.findAll(specification, Sort.by(Sort.Direction.DESC, "createdAt"))
             .stream()
