@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package com.mysawit.integration.harvest.proto;
+
+option java_multiple_files = true;
+option java_package = "com.mysawit.integration.harvest.proto";
+option java_outer_classname = "HarvestProto";
+
+service HarvestGrpcService {
+  rpc GetApprovedHarvests (GetApprovedHarvestsRequest) returns (GetApprovedHarvestsResponse);
+}
+
+message GetApprovedHarvestsRequest {
+  repeated string harvest_ids = 1;
+}
+
+message HarvestSummaryMessage {
+  string id = 1;
+  string weight_kg = 2;
+  bool approved = 3;
+}
+
+message GetApprovedHarvestsResponse {
+  repeated HarvestSummaryMessage harvests = 1;
+}
