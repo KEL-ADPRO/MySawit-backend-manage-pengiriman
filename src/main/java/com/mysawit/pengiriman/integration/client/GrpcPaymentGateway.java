@@ -6,10 +6,15 @@ import com.mysawit.pengiriman.integration.gateway.PaymentGateway;
 import io.grpc.StatusRuntimeException;
 import java.math.BigDecimal;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+/**
+ * gRPC client for the Payment microservice.
+ * Note: async behavior is handled by PayrollEventListener, not here.
+ */
+@Slf4j
 @Component
 public class GrpcPaymentGateway implements PaymentGateway {
 
@@ -17,18 +22,22 @@ public class GrpcPaymentGateway implements PaymentGateway {
     private PaymentGrpcServiceGrpc.PaymentGrpcServiceBlockingStub paymentStub;
 
     @Override
-    @Async("payrollExecutor")
-    public void triggerDriverPayroll(String driverId, UUID shipmentId, BigDecimal weightKg) {
+    public void triggerDriverPayroll(
+        String driverId, UUID shipmentId, BigDecimal weightKg
+    ) {
         triggerPayroll(driverId, shipmentId, "SUPIR", weightKg);
     }
 
     @Override
-    @Async("payrollExecutor")
-    public void triggerMandorPayroll(String mandorId, UUID shipmentId, BigDecimal recognizedWeightKg) {
+    public void triggerMandorPayroll(
+        String mandorId, UUID shipmentId, BigDecimal recognizedWeightKg
+    ) {
         triggerPayroll(mandorId, shipmentId, "MANDOR", recognizedWeightKg);
     }
 
-    private void triggerPayroll(String actorId, UUID shipmentId, String role, BigDecimal weightKg) {
+    private void triggerPayroll(
+        String actorId, UUID shipmentId, String role, BigDecimal weightKg
+    ) {
         try {
             paymentStub.triggerPayroll(
                 TriggerPayrollRequest.newBuilder()
@@ -39,7 +48,11 @@ public class GrpcPaymentGateway implements PaymentGateway {
                     .build()
             );
         } catch (StatusRuntimeException exception) {
-            throw new IllegalStateException("Failed to trigger payroll for role " + role, exception);
+            log.error("Failed to trigger payroll for role={}, actor={}",
+                role, actorId, exception);
+            throw new IllegalStateException(
+                "Failed to trigger payroll for role " + role, exception
+            );
         }
     }
 }
