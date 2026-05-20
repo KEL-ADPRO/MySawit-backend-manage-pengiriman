@@ -3,7 +3,7 @@
 #  Menggunakan Gradle wrapper di dalam container untuk memastikan
 #  build reproducible tanpa bergantung pada JDK lokal.
 # ═══════════════════════════════════════════════════════════════
-FROM eclipse-temurin:17-jdk-alpine AS builder
+FROM eclipse-temurin:17-jdk-jammy AS builder
 
 WORKDIR /app
 
