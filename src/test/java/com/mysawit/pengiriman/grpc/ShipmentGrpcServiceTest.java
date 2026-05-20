@@ -6,9 +6,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.mysawit.pengiriman.dto.DriverStatusUpdateRequest;
+import com.mysawit.pengiriman.dto.ShipmentQueryRequest;
 import com.mysawit.pengiriman.dto.ShipmentResponse;
 import com.mysawit.pengiriman.enums.ShipmentStatus;
 import com.mysawit.pengiriman.proto.GetShipmentByIdRequest;
+import com.mysawit.pengiriman.proto.ListShipmentsByDriverRequest;
+import com.mysawit.pengiriman.proto.ShipmentListMessage;
+import com.mysawit.pengiriman.proto.ShipmentMessage;
 import com.mysawit.pengiriman.proto.ShipmentStatusGrpc;
 import com.mysawit.pengiriman.proto.UpdateDriverStatusGrpcRequest;
 import com.mysawit.pengiriman.usecase.ShipmentCommandUseCase;
@@ -19,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -29,78 +34,105 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ShipmentGrpcServiceTest {
 
     @Mock
-    private ShipmentQueryUseCase shipmentQueryUseCase;
-
+    private ShipmentQueryUseCase queryUseCase;
     @Mock
-    private ShipmentCommandUseCase shipmentCommandUseCase;
+    private ShipmentCommandUseCase commandUseCase;
 
-    private ShipmentGrpcService shipmentGrpcService;
+    private ShipmentGrpcService grpcService;
 
     @BeforeEach
     void setUp() {
-        shipmentGrpcService = new ShipmentGrpcService(
-            shipmentQueryUseCase,
-            shipmentCommandUseCase,
-            new ShipmentGrpcMapper()
+        grpcService = new ShipmentGrpcService(
+            queryUseCase, commandUseCase, new ShipmentGrpcMapper()
         );
     }
 
     @Test
-    void getShipmentByIdShouldMapResponseToGrpcMessage() {
-        UUID shipmentId = UUID.randomUUID();
-        when(shipmentQueryUseCase.getShipmentById(shipmentId)).thenReturn(buildResponse(shipmentId, ShipmentStatus.MEMUAT));
-        RecordingObserver<com.mysawit.pengiriman.proto.ShipmentMessage> observer = new RecordingObserver<>();
+    @DisplayName("getShipmentById should map and return gRPC message")
+    void getById() {
+        UUID id = UUID.randomUUID();
+        when(queryUseCase.getShipmentById(id))
+            .thenReturn(buildResponse(id, ShipmentStatus.MEMUAT));
+        RecordingObserver<ShipmentMessage> observer = new RecordingObserver<>();
 
-        shipmentGrpcService.getShipmentById(
-            GetShipmentByIdRequest.newBuilder().setShipmentId(shipmentId.toString()).build(),
+        grpcService.getShipmentById(
+            GetShipmentByIdRequest.newBuilder()
+                .setShipmentId(id.toString()).build(),
             observer
         );
 
-        assertEquals(shipmentId.toString(), observer.value.getId());
+        assertEquals(id.toString(), observer.value.getId());
         assertEquals(ShipmentStatusGrpc.MEMUAT, observer.value.getStatus());
     }
 
     @Test
-    void updateDriverStatusShouldMapGrpcEnumToDomainEnum() {
-        UUID shipmentId = UUID.randomUUID();
-        when(shipmentCommandUseCase.updateDriverStatus(any(), any()))
-            .thenReturn(buildResponse(shipmentId, ShipmentStatus.MENGIRIM));
-        RecordingObserver<com.mysawit.pengiriman.proto.ShipmentMessage> observer = new RecordingObserver<>();
+    @DisplayName("listShipmentsByDriver should return list message")
+    void listByDriver() {
+        UUID id = UUID.randomUUID();
+        when(queryUseCase.getShipments(any(ShipmentQueryRequest.class)))
+            .thenReturn(List.of(buildResponse(id, ShipmentStatus.MENGIRIM)));
+        RecordingObserver<ShipmentListMessage> observer = new RecordingObserver<>();
 
-        shipmentGrpcService.updateDriverStatus(
+        grpcService.listShipmentsByDriver(
+            ListShipmentsByDriverRequest.newBuilder()
+                .setDriverId("d1").setDate("").build(),
+            observer
+        );
+
+        assertEquals(1, observer.value.getShipmentsCount());
+    }
+
+    @Test
+    @DisplayName("listShipmentsByDriver should parse date when provided")
+    void listByDriverWithDate() {
+        when(queryUseCase.getShipments(any(ShipmentQueryRequest.class)))
+            .thenReturn(List.of());
+        RecordingObserver<ShipmentListMessage> observer = new RecordingObserver<>();
+
+        grpcService.listShipmentsByDriver(
+            ListShipmentsByDriverRequest.newBuilder()
+                .setDriverId("d1").setDate("2026-01-15").build(),
+            observer
+        );
+
+        assertEquals(0, observer.value.getShipmentsCount());
+    }
+
+    @Test
+    @DisplayName("updateDriverStatus should map gRPC enum to domain")
+    void updateStatus() {
+        UUID id = UUID.randomUUID();
+        when(commandUseCase.updateDriverStatus(any(), any()))
+            .thenReturn(buildResponse(id, ShipmentStatus.MENGIRIM));
+        RecordingObserver<ShipmentMessage> observer = new RecordingObserver<>();
+
+        grpcService.updateDriverStatus(
             UpdateDriverStatusGrpcRequest.newBuilder()
-                .setShipmentId(shipmentId.toString())
-                .setDriverId("driver-1")
+                .setShipmentId(id.toString())
+                .setDriverId("d1")
                 .setNewStatus(ShipmentStatusGrpc.MENGIRIM)
                 .build(),
             observer
         );
 
-        ArgumentCaptor<DriverStatusUpdateRequest> captor = ArgumentCaptor.forClass(DriverStatusUpdateRequest.class);
-        verify(shipmentCommandUseCase).updateDriverStatus(org.mockito.ArgumentMatchers.eq(shipmentId), captor.capture());
+        ArgumentCaptor<DriverStatusUpdateRequest> captor =
+            ArgumentCaptor.forClass(DriverStatusUpdateRequest.class);
+        verify(commandUseCase).updateDriverStatus(
+            org.mockito.ArgumentMatchers.eq(id), captor.capture()
+        );
         assertEquals(ShipmentStatus.MENGIRIM, captor.getValue().newStatus());
         assertEquals(ShipmentStatusGrpc.MENGIRIM, observer.value.getStatus());
     }
 
-    private ShipmentResponse buildResponse(UUID shipmentId, ShipmentStatus status) {
+    private ShipmentResponse buildResponse(UUID id, ShipmentStatus status) {
         return new ShipmentResponse(
-            shipmentId,
-            "driver-1",
-            "mandor-1",
-            List.of("harvest-1"),
-            new BigDecimal("150"),
-            null,
-            status,
-            null,
-            Instant.now(),
-            Instant.now(),
-            null,
-            null
+            id, "d1", "m1", List.of("h1"),
+            new BigDecimal("150"), null, status, null,
+            Instant.now(), Instant.now(), null, null
         );
     }
 
     private static final class RecordingObserver<T> implements StreamObserver<T> {
-
         private T value;
 
         @Override

@@ -13,9 +13,8 @@ version = "0.0.1-SNAPSHOT"
 description = "Demo project for Spring Boot"
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+	sourceCompatibility = JavaVersion.VERSION_17
+	targetCompatibility = JavaVersion.VERSION_17
 }
 
 configurations {
@@ -111,12 +110,32 @@ tasks.test {
 	finalizedBy(tasks.jacocoTestReport)
 }
 
+val functionalTestTask = tasks.named<Test>("functionalTest")
 
 tasks.jacocoTestReport {
-	dependsOn(tasks.test)
+	dependsOn(tasks.test, functionalTestTask)
+	executionData.setFrom(
+		fileTree(layout.buildDirectory) {
+			include("jacoco/*.exec")
+		}
+	)
 	reports {
 		xml.required.set(true)
 	}
+	classDirectories.setFrom(
+		files(classDirectories.files.map {
+			fileTree(it) {
+				exclude(
+					"**/proto/**",
+					"**/grpc/**Grpc.class",
+					"**/grpc/**Grpc$*.class",
+					"**/integration/client/**",
+					"**/PengirimanApplication.class",
+					"**/config/**"
+				)
+			}
+		})
+	)
 }
 
 checkstyle {
@@ -127,6 +146,7 @@ checkstyle {
 tasks.withType<Checkstyle>().configureEach {
 	source("src/main/java", "src/test/java")
 	include("**/*.java")
+	exclude("**/proto/**")
 }
 
 sonar {
