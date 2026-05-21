@@ -2,9 +2,8 @@
 #  Stage 1 — Build
 #  Menggunakan Gradle wrapper di dalam container untuk memastikan
 #  build reproducible tanpa bergantung pada JDK lokal.
-# ═══════════════════════════════════════════════════════════════
-FROM eclipse-temurin:17-jdk-alpine AS builder
-
+# ══════════════════════════════════════════════════════════════
+FROM eclipse-temurin:21-jdk-jammy AS builder
 WORKDIR /app
 
 # Copy Gradle wrapper dulu (agar cache hit saat dependencies tidak berubah)
@@ -29,7 +28,7 @@ RUN ./gradlew assemble --no-daemon -x test -x checkstyleMain -x checkstyleTest
 #  Stage 2 — Runtime
 #  Image lebih kecil, hanya JRE
 # ═══════════════════════════════════════════════════════════════
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
 
 # Metadata
 LABEL maintainer="MySawit Team"
