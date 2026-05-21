@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package com.mysawit.integration.user.proto;
+
+option java_multiple_files = true;
+option java_package = "com.mysawit.integration.user.proto";
+option java_outer_classname = "UserProto";
+
+service UserGrpcService {
+  rpc ListDriversByMandor (ListDriversByMandorRequest) returns (ListDriversByMandorResponse);
+  rpc ValidateMandorDriverEstate (ValidateMandorDriverEstateRequest) returns (ValidationResponse);
+  rpc ValidateAdminRole (ValidateAdminRoleRequest) returns (ValidationResponse);
+}
+
+message ListDriversByMandorRequest {
+  string mandor_id = 1;
+  string search = 2;
+}
+
+message DriverSummaryMessage {
+  string id = 1;
+  string name = 2;
+  string estate_id = 3;
+}
+
+message ListDriversByMandorResponse {
+  repeated DriverSummaryMessage drivers = 1;
+}
+
+message ValidateMandorDriverEstateRequest {
+  string mandor_id = 1;
+  string driver_id = 2;
+}
+
+message ValidateAdminRoleRequest {
+  string admin_id = 1;
+}
+
+message ValidationResponse {
+  bool valid = 1;
+}

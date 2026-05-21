@@ -1,0 +1,29 @@
+# Build output
+build/
+.gradle/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+.vscode/
+
+# Secrets — JANGAN masuk ke Docker image
+.env
+*.env
+
+# Test reports
+build/reports/
+build/test-results/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docs
+*.md
+README*

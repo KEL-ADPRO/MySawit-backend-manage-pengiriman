@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package com.mysawit.pengiriman.proto;
+
+option java_multiple_files = true;
+option java_package = "com.mysawit.pengiriman.proto";
+option java_outer_classname = "ShipmentProto";
+
+service ShipmentGrpcService {
+  rpc GetShipmentById (GetShipmentByIdRequest) returns (ShipmentMessage);
+  rpc ListShipmentsByDriver (ListShipmentsByDriverRequest) returns (ShipmentListMessage);
+  rpc UpdateDriverStatus (UpdateDriverStatusGrpcRequest) returns (ShipmentMessage);
+}
+
+message GetShipmentByIdRequest {
+  string shipment_id = 1;
+}
+
+message ListShipmentsByDriverRequest {
+  string driver_id = 1;
+  string date = 2;
+}
+
+message UpdateDriverStatusGrpcRequest {
+  string shipment_id = 1;
+  string driver_id = 2;
+  ShipmentStatusGrpc new_status = 3;
+}
+
+message ShipmentListMessage {
+  repeated ShipmentMessage shipments = 1;
+}
+
+message ShipmentMessage {
+  string id = 1;
+  string driver_id = 2;
+  string mandor_id = 3;
+  repeated string harvest_ids = 4;
+  string total_weight_kg = 5;
+  string recognized_weight_kg = 6;
+  ShipmentStatusGrpc status = 7;
+  string rejection_reason = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string mandor_reviewed_at = 11;
+  string admin_reviewed_at = 12;
+}
+
+enum ShipmentStatusGrpc {
+  SHIPMENT_STATUS_UNSPECIFIED = 0;
+  MEMUAT = 1;
+  MENGIRIM = 2;
+  TIBA_DI_TUJUAN = 3;
+  DISETUJUI_MANDOR = 4;
+  DITOLAK_MANDOR = 5;
+  DISETUJUI_ADMIN = 6;
+  DITOLAK_ADMIN = 7;
+  DITOLAK_PARSIAL_ADMIN = 8;
+}
