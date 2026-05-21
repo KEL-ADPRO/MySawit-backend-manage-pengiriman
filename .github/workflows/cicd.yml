@@ -107,13 +107,3 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: navicode/mysawit-pengiriman:latest
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-          cache: gradle
-      - name: Grant execute permission
-        run: chmod +x ./gradlew
-      - name: Build application
-        run: ./gradlew assemble
