@@ -2,8 +2,10 @@ package com.mysawit.pengiriman.grpc;
 
 import com.mysawit.pengiriman.dto.ShipmentResponse;
 import com.mysawit.pengiriman.enums.ShipmentStatus;
+import com.mysawit.pengiriman.proto.RecognizedWeightResponse;
 import com.mysawit.pengiriman.proto.ShipmentMessage;
 import com.mysawit.pengiriman.proto.ShipmentStatusGrpc;
+import com.mysawit.pengiriman.proto.ShipmentSummary;
 import java.math.BigDecimal;
 import java.time.Instant;
 import org.springframework.stereotype.Component;
@@ -11,6 +13,47 @@ import org.springframework.stereotype.Component;
 @Component
 public class ShipmentGrpcMapper {
 
+    /**
+     * Maps domain response to ShipmentSummary — the payment-compatible message.
+     * Field aliases used by payment module:
+     *   supir_user_id  ← driverId
+     *   mandor_user_id ← mandorId
+     *   delivered_kg   ← totalWeightKg
+     *   recognized_kg  ← recognizedWeightKg (empty string if not yet reviewed)
+     */
+    public ShipmentSummary toSummary(ShipmentResponse response) {
+        return ShipmentSummary.newBuilder()
+            .setId(response.id().toString())
+            .setStatus(response.status().name())
+            .setSupirUserId(response.driverId())
+            .setMandorUserId(response.mandorId())
+            .setDeliveredKg(response.totalWeightKg().toPlainString())
+            .setRecognizedKg(response.recognizedWeightKg() != null
+                ? response.recognizedWeightKg().toPlainString()
+                : "")
+            .setCreatedAt(toString(response.createdAt()))
+            .setMandorReviewedAt(toString(response.mandorReviewedAt()))
+            .setAdminReviewedAt(toString(response.adminReviewedAt()))
+            .build();
+    }
+
+    /**
+     * Maps domain response to lightweight RecognizedWeightResponse.
+     * Used by GetRecognizedWeight RPC — minimal payload for payroll Mandor.
+     */
+    public RecognizedWeightResponse toRecognizedWeight(ShipmentResponse response) {
+        return RecognizedWeightResponse.newBuilder()
+            .setShipmentId(response.id().toString())
+            .setRecognizedKg(response.recognizedWeightKg() != null
+                ? response.recognizedWeightKg().toPlainString()
+                : "")
+            .build();
+    }
+
+    /**
+     * Maps domain response to full ShipmentMessage — for internal RPCs
+     * (ListShipmentsByDriver, UpdateDriverStatus).
+     */
     public ShipmentMessage toGrpc(ShipmentResponse response) {
         ShipmentMessage.Builder builder = ShipmentMessage.newBuilder()
             .setId(response.id().toString())

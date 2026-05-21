@@ -7,7 +7,10 @@ option java_package = "com.mysawit.pengiriman.proto";
 option java_outer_classname = "ShipmentProto";
 
 service ShipmentGrpcService {
-  rpc GetShipmentById (GetShipmentByIdRequest) returns (ShipmentMessage);
+  // Returns ShipmentSummary with payment-compatible fields
+  rpc GetShipmentById (GetShipmentByIdRequest) returns (ShipmentSummary);
+  // Lightweight query: returns only recognized_kg for payroll MANDOR calculation
+  rpc GetRecognizedWeight (GetShipmentByIdRequest) returns (RecognizedWeightResponse);
   rpc ListShipmentsByDriver (ListShipmentsByDriverRequest) returns (ShipmentListMessage);
   rpc UpdateDriverStatus (UpdateDriverStatusGrpcRequest) returns (ShipmentMessage);
 }
@@ -27,33 +30,56 @@ message UpdateDriverStatusGrpcRequest {
   ShipmentStatusGrpc new_status = 3;
 }
 
+// ShipmentSummary — response untuk modul Pembayaran.
+// delivered_kg  = total berat dikirim  → untuk payroll role="SUPIR_TRUK"
+// recognized_kg = berat diakui pabrik  → untuk payroll role="MANDOR"
+//                 "" jika belum ada Admin review
+message ShipmentSummary {
+  string id                 = 1;
+  string status             = 2;
+  string supir_user_id      = 3;
+  string mandor_user_id     = 4;
+  string delivered_kg       = 5;
+  string recognized_kg      = 6;
+  string created_at         = 7;
+  string mandor_reviewed_at = 8;
+  string admin_reviewed_at  = 9;
+}
+
+// RecognizedWeightResponse — lightweight response untuk kalkulasi payroll Mandor
+message RecognizedWeightResponse {
+  string shipment_id   = 1;
+  string recognized_kg = 2;
+}
+
 message ShipmentListMessage {
   repeated ShipmentMessage shipments = 1;
 }
 
+// ShipmentMessage — pesan lengkap untuk internal use
 message ShipmentMessage {
-  string id = 1;
-  string driver_id = 2;
-  string mandor_id = 3;
+  string id                   = 1;
+  string driver_id            = 2;
+  string mandor_id            = 3;
   repeated string harvest_ids = 4;
-  string total_weight_kg = 5;
+  string total_weight_kg      = 5;
   string recognized_weight_kg = 6;
-  ShipmentStatusGrpc status = 7;
-  string rejection_reason = 8;
-  string created_at = 9;
-  string updated_at = 10;
-  string mandor_reviewed_at = 11;
-  string admin_reviewed_at = 12;
+  ShipmentStatusGrpc status   = 7;
+  string rejection_reason     = 8;
+  string created_at           = 9;
+  string updated_at           = 10;
+  string mandor_reviewed_at   = 11;
+  string admin_reviewed_at    = 12;
 }
 
 enum ShipmentStatusGrpc {
   SHIPMENT_STATUS_UNSPECIFIED = 0;
-  MEMUAT = 1;
-  MENGIRIM = 2;
-  TIBA_DI_TUJUAN = 3;
-  DISETUJUI_MANDOR = 4;
-  DITOLAK_MANDOR = 5;
-  DISETUJUI_ADMIN = 6;
-  DITOLAK_ADMIN = 7;
-  DITOLAK_PARSIAL_ADMIN = 8;
+  MEMUAT                      = 1;
+  MENGIRIM                    = 2;
+  TIBA_DI_TUJUAN              = 3;
+  DISETUJUI_MANDOR            = 4;
+  DITOLAK_MANDOR              = 5;
+  DISETUJUI_ADMIN             = 6;
+  DITOLAK_ADMIN               = 7;
+  DITOLAK_PARSIAL_ADMIN       = 8;
 }
