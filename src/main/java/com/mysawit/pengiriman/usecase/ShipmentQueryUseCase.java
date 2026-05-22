@@ -14,5 +14,5 @@ public interface ShipmentQueryUseCase {
 
     List<ShipmentResponse> getShipmentsApprovedByMandor(ShipmentQueryRequest request);
 
-    List<DriverSummaryResponse> getAvailableDriversForMandor(String mandorId, String search);
+    List<DriverSummaryResponse> getAvailableDriversForMandor(String driverId, String search);
 }
