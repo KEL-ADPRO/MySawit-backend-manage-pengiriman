@@ -85,7 +85,7 @@ jobs:
   publish-docker:
     runs-on: ubuntu-latest
     needs: [unit-test, functional-test]
-    if: github.ref == 'refs/heads/main'
+    if: always() && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout Code
