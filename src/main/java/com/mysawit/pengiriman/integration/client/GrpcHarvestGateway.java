@@ -5,12 +5,14 @@ import com.mysawit.integration.harvest.proto.HarvestGrpcServiceGrpc;
 import com.mysawit.integration.harvest.proto.HarvestSummaryMessage;
 import com.mysawit.pengiriman.integration.dto.HarvestSummary;
 import com.mysawit.pengiriman.integration.gateway.HarvestGateway;
+import com.mysawit.pengiriman.profiling.Profiled;
 import io.grpc.StatusRuntimeException;
 import java.math.BigDecimal;
 import java.util.List;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
+@Profiled(category = "shipment.grpc.harvest")
 @Component
 public class GrpcHarvestGateway implements HarvestGateway {
 
