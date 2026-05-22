@@ -18,9 +18,12 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.mysawit.pengiriman.profiling.Profiled;
+
 /**
  * Handles all shipment read operations (SRP: query-only).
  */
+@Profiled(category = "shipment.query")
 @Service
 @Transactional(readOnly = true)
 public class ShipmentQueryService implements ShipmentQueryUseCase {

@@ -3,6 +3,7 @@ package com.mysawit.pengiriman.integration.client;
 import com.mysawit.integration.payment.proto.PaymentGrpcServiceGrpc;
 import com.mysawit.integration.payment.proto.TriggerPayrollRequest;
 import com.mysawit.pengiriman.integration.gateway.PaymentGateway;
+import com.mysawit.pengiriman.profiling.Profiled;
 import io.grpc.StatusRuntimeException;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
  * gRPC client for the Payment microservice.
  * Note: async behavior is handled by PayrollEventListener, not here.
  */
+@Profiled(category = "shipment.grpc.payment")
 @Slf4j
 @Component
 public class GrpcPaymentGateway implements PaymentGateway {

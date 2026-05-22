@@ -31,12 +31,14 @@ import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.mysawit.pengiriman.profiling.Profiled;
 import org.springframework.util.StringUtils;
 
 /**
  * Handles all shipment write operations (SRP: command-only).
  * Uses Strategy Pattern for admin reviews and Observer Pattern for payroll events.
  */
+@Profiled(category = "shipment.command")
 @Service
 @Transactional
 public class ShipmentCommandService implements ShipmentCommandUseCase {
