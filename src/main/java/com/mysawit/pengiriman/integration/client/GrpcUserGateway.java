@@ -7,11 +7,13 @@ import com.mysawit.integration.user.proto.ValidateAdminRoleRequest;
 import com.mysawit.integration.user.proto.ValidateMandorDriverEstateRequest;
 import com.mysawit.pengiriman.integration.dto.DriverSummary;
 import com.mysawit.pengiriman.integration.gateway.UserGateway;
+import com.mysawit.pengiriman.profiling.Profiled;
 import io.grpc.StatusRuntimeException;
 import java.util.List;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
+@Profiled(category = "shipment.grpc.user")
 @Component
 public class GrpcUserGateway implements UserGateway {
 
