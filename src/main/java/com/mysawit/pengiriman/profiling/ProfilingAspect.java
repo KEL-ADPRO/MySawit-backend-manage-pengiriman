@@ -141,9 +141,15 @@ public class ProfilingAspect {
      */
     private String resolveCategory(final Class<?> targetClass) {
         final String pkg = targetClass.getPackageName();
-        if (pkg.contains(".service")) return "shipment.service";
-        if (pkg.contains(".usecase"))  return "shipment.usecase";
-        if (pkg.contains(".integration")) return "shipment.integration";
+        if (pkg.contains(".service")) {
+            return "shipment.service";
+        }
+        if (pkg.contains(".usecase")) {
+            return "shipment.usecase";
+        }
+        if (pkg.contains(".integration")) {
+            return "shipment.integration";
+        }
         return "shipment.other";
     }
 }

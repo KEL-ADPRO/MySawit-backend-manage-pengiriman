@@ -1,0 +1,38 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram - MySawit Manage Pengiriman
+
+Person(driver, "Driver", "Supir truk pengangkut sawit")
+Person(mandor, "Mandor", "Pengawas lapangan")
+Person(admin, "Admin", "Pihak pabrik/sistem")
+
+System_Boundary(pengiriman_boundary, "Manage Pengiriman Service") {
+    Container(rest_api, "REST API Controller", "Spring Web", "Menerima request operasional dari pengguna")
+    Container(grpc_server, "gRPC Server", "grpc-spring-boot", "Melayani query internal dari microservice lain")
+    Container(service_layer, "Service & Use Case", "Spring Bean", "Menjalankan aturan bisnis dan state machine")
+    ContainerDb(database, "PostgreSQL Database", "Relational DB", "Menyimpan state pengiriman dan timestamp")
+    Container(event_listener, "Async Event Listener", "Spring Event", "Mendengarkan event domain untuk payroll")
+}
+
+System_Ext(user_service, "User Service", "Manajemen identitas dan validasi estate")
+System_Ext(harvest_service, "Harvest Service", "Pencatatan hasil panen")
+System_Ext(payment_service, "Payment Service", "Eksekusi penggajian (Payroll)")
+
+Rel(driver, rest_api, "Update status jalan (PATCH)", "JSON/HTTPS")
+Rel(mandor, rest_api, "Buat pengiriman & Review (POST/PATCH)", "JSON/HTTPS")
+Rel(admin, rest_api, "Review akhir berat pabrik (PATCH)", "JSON/HTTPS")
+
+Rel(rest_api, service_layer, "Kirim instruksi command/query", "Method Call")
+Rel(grpc_server, service_layer, "Ambil data pengiriman", "Method Call")
+Rel(service_layer, database, "Simpan/Baca data (JPA)", "TCP/IP")
+
+Rel(service_layer, user_service, "Validasi Mandor, Driver, Admin", "gRPC (Sync)")
+Rel(service_layer, harvest_service, "Cek status panen & berat", "gRPC (Sync)")
+
+Rel(service_layer, event_listener, "Publish domain event", "In-Memory")
+Rel(event_listener, payment_service, "Trigger payroll", "gRPC (Async)")
+
+Rel(payment_service, grpc_server, "Verifikasi berat yang diakui", "gRPC (Sync)")
+
+@enduml

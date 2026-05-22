@@ -118,6 +118,13 @@ public class ShipmentCommandService implements ShipmentCommandUseCase {
             );
         }
 
+        if (!userGateway.areMandorAndDriverInSameEstate(
+            shipment.getMandorId(), request.driverId())) {
+        throw new AccessDeniedBusinessException(
+            "Driver is not managed by the mandor of this shipment"
+        );
+    }
+
         ShipmentStatus current = shipment.getStatus();
         ShipmentStatus target = request.newStatus();
 
